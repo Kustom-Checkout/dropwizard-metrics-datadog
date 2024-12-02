@@ -22,6 +22,7 @@
             <distribution>repo</distribution>
         </license>
     </licenses>
+
     <developers>
         <developer>
             <id>dguo-coursera</id>
@@ -29,6 +30,7 @@
             <email>dguo (at) coursera.org</email>
         </developer>
     </developers>
+
     <contributors>
         <contributor>
             <name>Ankur Chauhan</name>
@@ -45,11 +47,13 @@
             <name>Joe Hohertz</name>
         </contributor>
     </contributors>
+
     <properties>
         <metrics.version>4.2.29</metrics.version>
         <jackson.version>2.18.2</jackson.version>
         <dropwizard.version>3.0.11</dropwizard.version>
     </properties>
+
     <build>
         <plugins>
             <plugin>
@@ -183,4 +187,13 @@
             </dependency>
         </dependencies>
     </dependencyManagement>
+
+    <distributionManagement>
+        <repository>
+            <id>github</id>
+            <name>GitHub Packages</name>
+            <url>https://maven.pkg.github.com/Kustom-Checkout/dropwizard-metrics-datadog</url>
+        </repository>
+    </distributionManagement>
+
 </project>

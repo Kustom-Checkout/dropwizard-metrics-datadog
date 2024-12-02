@@ -36,13 +36,8 @@ jobs:
       - name: Build with Maven
         run: mvn --batch-mode --update-snapshots verify
 
-      - run: mkdir built && cp */target/*.jar built
-
       - name: Publish to GitHub Packages
-        uses: actions/upload-artifact@v4
-        with:
-          path: built
-          overwrite: true
+        run: mvn --batch-mode deploy
         env:
           USERNAME: ${{ github.actor }}
           TOKEN: ${{ secrets.GITHUB_TOKEN }}
