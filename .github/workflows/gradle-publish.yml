@@ -36,7 +36,44 @@ jobs:
       - name: Build with Maven
         run: mvn --batch-mode --update-snapshots verify
 
+      - name: Create maven settings
+        shell: bash
+        run: |
+          cat <<EOF > mvn_settings.xml
+          <settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
+            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0
+                                http://maven.apache.org/xsd/settings-1.0.0.xsd">
+
+            <activeProfiles>
+              <activeProfile>github</activeProfile>
+            </activeProfiles>
+
+            <profiles>
+              <profile>
+                <id>github</id>
+                <repositories>
+                  <repository>
+                    <id>central</id>
+                    <url>https://repo1.maven.org/maven2</url>
+                  </repository>
+                </repositories>
+              </profile>
+            </profiles>
+
+            <servers>
+              <server>
+                <id>github</id>
+                <username>dummy</username>
+                <password>\${GITHUB_TOKEN}</password>
+              </server>
+            </servers>
+
+          </settings>
+
+          EOF
+
       - name: Publish to GitHub Packages
-        run: mvn --batch-mode deploy
+        run: mvn --batch-mode deploy -s mvn_settings.xml
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
