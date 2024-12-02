@@ -6,12 +6,12 @@ import java.lang.Override;
 import java.lang.StringBuilder;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Matcher;
+import java.util.Objects;
 import java.util.regex.Pattern;
 
 public class TaggedName {
   private static final Pattern tagPattern = Pattern
-      .compile("([\\w\\.-]+)\\[([\\w\\W]+)\\]");
+      .compile("([\\w.-]+)\\[([\\w\\W]+)]");
 
   private final String metricName;
   private final List<String> encodedTags;
@@ -31,10 +31,10 @@ public class TaggedName {
 
   public String encode() {
     if (!encodedTags.isEmpty()) {
-      StringBuilder sb = new StringBuilder(this.metricName);
+      var sb = new StringBuilder(this.metricName);
       sb.append('[');
-      String prefix = "";
-      for (String encodedTag : encodedTags) {
+      var prefix = "";
+      for (var encodedTag : encodedTags) {
         sb.append(prefix);
         sb.append(encodedTag);
         prefix = ",";
@@ -47,12 +47,12 @@ public class TaggedName {
   }
 
   public static TaggedName decode(String encodedTaggedName) {
-    TaggedNameBuilder builder = new TaggedNameBuilder();
+    var builder = new TaggedNameBuilder();
 
-    Matcher matcher = tagPattern.matcher(encodedTaggedName);
+    var matcher = tagPattern.matcher(encodedTaggedName);
     if (matcher.find() && matcher.groupCount() == 2) {
       builder.metricName(matcher.group(1));
-      for(String t : matcher.group(2).split("\\,")) {
+      for (var t : matcher.group(2).split(",")) {
         builder.addTag(t);
       }
     } else {
@@ -68,12 +68,10 @@ public class TaggedName {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
 
-    TaggedName that = (TaggedName) o;
+    var that = (TaggedName) o;
 
-    if (metricName != null ? !metricName.equals(that.metricName) : that.metricName != null) return false;
-    if (encodedTags != null ? !encodedTags.equals(that.encodedTags) : that.encodedTags != null) return false;
-
-    return true;
+    if (!Objects.equals(metricName, that.metricName)) return false;
+    return Objects.equals(encodedTags, that.encodedTags);
   }
 
   @Override
@@ -86,7 +84,7 @@ public class TaggedName {
 
   public static class TaggedNameBuilder {
     private String metricName;
-    private final List<String> encodedTags = new ArrayList<String>();
+    private final List<String> encodedTags = new ArrayList<>();
 
     public TaggedNameBuilder metricName(String metricName) {
       this.metricName = metricName;
@@ -95,7 +93,7 @@ public class TaggedName {
 
     public TaggedNameBuilder addTag(String key, String val) {
       assertNonEmpty(key, "tagKey");
-      encodedTags.add(new StringBuilder(key).append(':').append(val).toString());
+      encodedTags.add(key + ':' + val);
       return this;
     }
 
@@ -106,7 +104,7 @@ public class TaggedName {
     }
 
     private void assertNonEmpty(String s, String field) {
-      if (s == null || "".equals(s.trim())) {
+      if (s == null || s.trim().isEmpty()) {
         throw new IllegalArgumentException((field + " must be defined"));
       }
     }

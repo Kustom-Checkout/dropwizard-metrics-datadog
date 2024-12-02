@@ -2,8 +2,6 @@ package org.coursera.metrics.datadog.transport;
 
 import java.net.SocketAddress;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import com.alibaba.dcm.DnsCacheManipulator;
 
@@ -13,7 +11,6 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 public class UdpTransportTest {
-  private static final ExecutorService EXECUTOR = Executors.newSingleThreadExecutor();
   private static final String LOCAL_IP = "127.0.0.1";
   private static final String TEST_HOST = "fastandunresolvable";
   private static final int TEST_PORT = 1111;
@@ -48,9 +45,9 @@ public class UdpTransportTest {
 
     try {
       retryingCallable.call();
-      assertFalse(true);
-    } catch (final Exception e) {}
-    // ^ This should throw becuase the host is unresolvable.
+        fail();
+    } catch (final Exception ignored) {}
+    // ^ This should throw because the host is unresolvable.
 
     DnsCacheManipulator.setDnsCache(TEST_HOST, LOCAL_IP); // Make host resolvable.
     assertNotNull(retryingCallable.call()); // Returns with resolved by the time it's resolvable.

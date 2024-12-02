@@ -6,14 +6,14 @@ import org.junit.Test;
 
 public class DefaultMetricNameFormatterFactoryTest {
   @Test
-  public void isDiscoverable() throws Exception {
+  public void isDiscoverable() {
     Assertions
             .assertThat(new DiscoverableSubtypeResolver().getDiscoveredSubtypes())
             .contains(DefaultMetricNameFormatterFactory.class);
   }
 
   @Test
-  public void testBuild() throws Exception {
+  public void testBuild() {
     Assertions
             .assertThat(new DefaultMetricNameFormatterFactory().build())
             .isInstanceOf(DefaultMetricNameFormatter.class);

@@ -96,7 +96,7 @@ expensive CPU and memory-wise if you have a huge, heavily tagged metric set.
 
 ### Dropwizard Metrics Reporter
 
-If you have a dropwizard project and have at least `dropwizard-core` 0.7.X, 
+If you have a dropwizard project and have at least `dropwizard-core` 3.0.X, 
 then you can perform the following steps to automatically report metrics to
 datadog.
 
@@ -106,7 +106,7 @@ First, add the `dropwizard-metrics-datadog` dependency in your POM:
     <dependency>
         <groupId>org.coursera</groupId>
         <artifactId>dropwizard-metrics-datadog</artifactId>
-        <version>1.1.13</version>
+        <version>2.0.0</version>
     </dependency>
 ~~~
 
@@ -221,7 +221,7 @@ would produce: `custom.prefix.io.dropwizard.jetty.MutableServletContextHandler.2
 #### Metric Name Formatter
 
 The metricNameFormatter option can be used to add custom logic when processing each
-metric's name. By default it will use the DefaultMetricNameFormatter which handles
+metric's name. By default, it will use the DefaultMetricNameFormatter which handles
 Datadog tags but does not modify the metric name.
 
 ~~~yaml

@@ -1,6 +1,6 @@
 package org.coursera.metrics.datadog;
 
-import org.apache.http.client.fluent.Request;
+import org.apache.hc.client5.http.fluent.Request;
 
 import java.io.IOException;
 
@@ -10,7 +10,7 @@ public class AwsHelper {
 
   public static String getEc2InstanceId() throws IOException {
     try {
-      return Request.Get(url).execute().returnContent().asString();
+      return Request.get(url).execute().returnContent().asString();
     } catch (Throwable t) {
       throw new IOException(t);
     }

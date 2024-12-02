@@ -2,8 +2,6 @@ package org.coursera.metrics.datadog.model;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Pattern;
-import java.util.regex.Matcher;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
@@ -13,14 +11,14 @@ import org.coursera.metrics.datadog.TaggedName;
 public abstract class DatadogSeries<T extends Number> {
   abstract protected String getType();
 
-  private String name;
-  private T count;
-  private Long epoch;
-  private String host;
-  private List<String> tags;
+  private final String name;
+  private final T count;
+  private final Long epoch;
+  private final String host;
+  private final List<String> tags;
 
   public DatadogSeries(String name, T count, Long epoch, String host, List<String> additionalTags) {
-    TaggedName taggedName = TaggedName.decode(name);
+    var taggedName = TaggedName.decode(name);
     this.name = taggedName.getMetricName();
     this.tags = taggedName.getEncodedTags();
 
@@ -46,11 +44,11 @@ public abstract class DatadogSeries<T extends Number> {
   }
 
   public List<List<Number>> getPoints() {
-    List<Number> point = new ArrayList<Number>();
+    var point = new ArrayList<Number>();
     point.add(epoch);
     point.add(count);
 
-    List<List<Number>> points = new ArrayList<List<Number>>();
+    var points = new ArrayList<List<Number>>();
     points.add(point);
     return points;
   }
@@ -58,10 +56,7 @@ public abstract class DatadogSeries<T extends Number> {
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
-    if (!(o instanceof DatadogSeries)) return false;
-
-    DatadogSeries that = (DatadogSeries) o;
-
+    if (!(o instanceof DatadogSeries that)) return false;
     if (!count.equals(that.count)) return false;
     if (!epoch.equals(that.epoch)) return false;
     if (!host.equals(that.host)) return false;

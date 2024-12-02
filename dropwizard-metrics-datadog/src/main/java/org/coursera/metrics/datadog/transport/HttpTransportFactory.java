@@ -17,7 +17,7 @@ public class HttpTransportFactory implements AbstractTransportFactory {
   private Duration connectTimeout = Duration.seconds(5);
 
   @JsonProperty
-  private Duration socketTimeout = Duration.seconds(5);
+  private Duration responseTimeout = Duration.seconds(5);
 
   @JsonProperty
   private int proxyPort;
@@ -26,10 +26,10 @@ public class HttpTransportFactory implements AbstractTransportFactory {
   private String proxyHost;
 
   public HttpTransport build() {
-    HttpTransport.Builder builder = new HttpTransport.Builder()
+    var builder = new HttpTransport.Builder()
         .withApiKey(apiKey)
         .withConnectTimeout((int) connectTimeout.toMilliseconds())
-        .withSocketTimeout((int) socketTimeout.toMilliseconds());
+        .withResponseTimeout((int) responseTimeout.toMilliseconds());
 
     if (proxyPort != 0 || proxyHost != null) {
       if (proxyPort == 0 || proxyHost == null) {

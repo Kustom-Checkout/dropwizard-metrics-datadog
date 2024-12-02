@@ -6,7 +6,7 @@ import org.junit.Test;
 
 public class HttpTransportFactoryTest {
   @Test
-  public void isDiscoverable() throws Exception {
+  public void isDiscoverable() {
     Assertions
             .assertThat(new DiscoverableSubtypeResolver().getDiscoveredSubtypes())
             .contains(HttpTransportFactory.class);

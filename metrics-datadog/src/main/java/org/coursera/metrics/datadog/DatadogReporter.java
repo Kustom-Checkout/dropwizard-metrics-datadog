@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
-import java.util.Map;
 import java.util.SortedMap;
 import java.util.concurrent.TimeUnit;
 
@@ -61,7 +60,7 @@ public class DatadogReporter extends ScheduledReporter {
     this.host = host;
     this.expansions = expansions;
     this.metricNameFormatter = metricNameFormatter;
-    this.tags = (tags == null) ? new ArrayList<String>() : tags;
+    this.tags = (tags == null) ? new ArrayList<>() : tags;
     this.transport = transport;
     this.prefix = prefix;
     this.tagsCallback = tagsCallback;
@@ -77,7 +76,7 @@ public class DatadogReporter extends ScheduledReporter {
 
     List<String> newTags = tags;
     if (tagsCallback != null) {
-      List<String> dynamicTags = tagsCallback.getTags();
+      var dynamicTags = tagsCallback.getTags();
       if (dynamicTags != null && ! dynamicTags.isEmpty()) {
         newTags = TagUtils.mergeTags(tags, dynamicTags);
       }
@@ -86,23 +85,23 @@ public class DatadogReporter extends ScheduledReporter {
     try {
       request = transport.prepare();
 
-      for (Map.Entry<String, Gauge> entry : gauges.entrySet()) {
+      for (var entry : gauges.entrySet()) {
         reportGauge(prefix(entry.getKey()), entry.getValue(), timestamp, newTags);
       }
 
-      for (Map.Entry<String, Counter> entry : counters.entrySet()) {
+      for (var entry : counters.entrySet()) {
         reportCounter(prefix(entry.getKey()), entry.getValue(), timestamp, newTags);
       }
 
-      for (Map.Entry<String, Histogram> entry : histograms.entrySet()) {
+      for (var entry : histograms.entrySet()) {
         reportHistogram(prefix(entry.getKey()), entry.getValue(), timestamp, newTags);
       }
 
-      for (Map.Entry<String, Meter> entry : meters.entrySet()) {
+      for (var entry : meters.entrySet()) {
         reportMetered(prefix(entry.getKey()), entry.getValue(), timestamp, newTags);
       }
 
-      for (Map.Entry<String, Timer> entry : timers.entrySet()) {
+      for (var entry : timers.entrySet()) {
         reportTimer(prefix(entry.getKey()), entry.getValue(), timestamp, newTags);
       }
 
@@ -205,15 +204,15 @@ public class DatadogReporter extends ScheduledReporter {
    * Gauges are the only metrics which can throw exceptions. With a thrown exception all
    * other metrics will not be reported to Datadog.
   */
-  private void reportGauge(String name, Gauge gauge, long timestamp, List<String> tags) {
+  private void reportGauge(String name, Gauge<?> gauge, long timestamp, List<String> tags) {
     try {
-      final Number value = toNumber(gauge.getValue());
+      var value = toNumber(gauge.getValue());
       if (value != null) {
         request.addGauge(new DatadogGauge(metricNameFormatter.format(name), value, timestamp, host,
                 tags));
       }
     } catch (Exception e) {
-      String errorMessage = String.format("Error reporting gauge metric (name: %s, tags: %s) to Datadog, " +
+      var errorMessage = String.format("Error reporting gauge metric (name: %s, tags: %s) to Datadog, " +
               "continuing reporting other metrics.", name, tags);
       LOG.error(errorMessage, e);
     }
@@ -255,11 +254,11 @@ public class DatadogReporter extends ScheduledReporter {
     P99("p99"),
     P999("p999");
 
-    public static EnumSet<Expansion> ALL = EnumSet.allOf(Expansion.class);
+    public static final EnumSet<Expansion> ALL = EnumSet.allOf(Expansion.class);
 
     private final String displayName;
 
-    private Expansion(String displayName) {
+    Expansion(String displayName) {
       this.displayName = displayName;
     }
 

@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 
 /**
  * Serialize datadog time series object into json
@@ -48,6 +49,6 @@ public class JsonSerializer implements Serializer {
   }
 
   public String getAsString() throws UnsupportedEncodingException {
-    return outputStream.toString("UTF-8");
+    return outputStream.toString(StandardCharsets.UTF_8);
   }
 }

@@ -1,8 +1,7 @@
 package org.coursera.metrics.datadog.transport;
 
-import com.timgroup.statsd.NonBlockingStatsDClient;
+import com.timgroup.statsd.NonBlockingStatsDClientBuilder;
 import com.timgroup.statsd.StatsDClient;
-import com.timgroup.statsd.StatsDClientErrorHandler;
 import org.coursera.metrics.datadog.model.DatadogCounter;
 import org.coursera.metrics.datadog.model.DatadogGauge;
 import org.slf4j.Logger;
@@ -27,28 +26,24 @@ public class UdpTransport implements Transport {
 
   private static final Logger LOG = LoggerFactory.getLogger(UdpTransport.class);
   private final StatsDClient statsd;
-  private final Map lastSeenCounters = new HashMap<String, Long>();
+  private final Map<String, Long> lastSeenCounters = new HashMap<>();
 
   private UdpTransport(String prefix, String statsdHost, int port, boolean isRetryingLookup, String[] globalTags) {
     final Callable<SocketAddress> socketAddressCallable;
 
-    if(isRetryingLookup) {
+    if (isRetryingLookup) {
       socketAddressCallable = volatileAddressResolver(statsdHost, port);
     } else {
       socketAddressCallable = staticAddressResolver(statsdHost, port);
     }
 
-    statsd = new NonBlockingStatsDClient(
-            prefix,
-            Integer.MAX_VALUE,
-            globalTags,
-            new StatsDClientErrorHandler() {
-              public void handle(Exception e) {
-                LOG.error(e.getMessage(), e);
-              }
-            },
-            socketAddressCallable
-    );
+    statsd = new NonBlockingStatsDClientBuilder()
+            .prefix(prefix)
+            .queueSize(Integer.MAX_VALUE)
+            .constantTags(globalTags)
+            .errorHandler(e -> LOG.error(e.getMessage(), e))
+            .addressLookup(socketAddressCallable)
+            .build();
   }
 
   public void close() throws IOException {
@@ -104,11 +99,10 @@ public class UdpTransport implements Transport {
      */
     public void addGauge(DatadogGauge gauge) {
       if (gauge.getPoints().size() > 1) {
-        LOG.debug("Gauge " + gauge.getMetric() + " has more than one data point, " +
-            "will pick the first point only");
+          LOG.debug("Gauge {} has more than one data point, will pick the first point only", gauge.getMetric());
       }
-      double value = gauge.getPoints().get(0).get(1).doubleValue();
-      String[] tags = gauge.getTags().toArray(new String[gauge.getTags().size()]);
+      var value = gauge.getPoints().get(0).get(1).doubleValue();
+      var tags = gauge.getTags().toArray(new String[0]);
       statsdClient.gauge(gauge.getMetric(), value, tags);
     }
 
@@ -117,22 +111,21 @@ public class UdpTransport implements Transport {
      */
     public void addCounter(DatadogCounter counter) {
       if (counter.getPoints().size() > 1) {
-        LOG.debug("Counter " + counter.getMetric() + " has more than one data point, " +
-            "will pick the first point only");
+          LOG.debug("Counter {} has more than one data point, will pick the first point only", counter.getMetric());
       }
-      long value = counter.getPoints().get(0).get(1).longValue();
-      String[] tags = counter.getTags().toArray(new String[counter.getTags().size()]);
-      StringBuilder sb = new StringBuilder("");
-      for (int i=tags.length - 1; i>=0; i--) {
+      var value = counter.getPoints().get(0).get(1).longValue();
+      var tags = counter.getTags().toArray(new String[0]);
+      var sb = new StringBuilder();
+      for (var i = tags.length - 1; i >= 0; i--) {
         sb.append(tags[i]);
         if (i > 0) {
           sb.append(",");
         }
       }
 
-      String metric = counter.getMetric();
-      String finalMetricsSeenName = metric + ":" + sb.toString();
-      long finalValue = value;
+      var metric = counter.getMetric();
+      var finalMetricsSeenName = metric + ":" + sb;
+      var finalValue = value;
       if (lastSeenCounters.containsKey(finalMetricsSeenName)) {
         // If we've seen this counter before then calculate the difference
         // by subtracting the new value from the old. StatsD expects a relative
@@ -156,8 +149,8 @@ public class UdpTransport implements Transport {
   // Visible for testing.
   static Callable<SocketAddress> staticAddressResolver(final String host, final int port) {
     try {
-      return NonBlockingStatsDClient.staticAddressResolution(host, port);
-    } catch(final Exception e) {
+      return NonBlockingStatsDClientBuilder.staticAddressResolution(host, port);
+    } catch (final Exception e) {
       LOG.error("Error during constructing statsd address resolver.", e);
       throw new RuntimeException(e);
     }
@@ -165,6 +158,6 @@ public class UdpTransport implements Transport {
 
   // Visible for testing.
   static Callable<SocketAddress> volatileAddressResolver(final String host, final int port) {
-    return NonBlockingStatsDClient.volatileAddressResolution(host, port);
+    return NonBlockingStatsDClientBuilder.volatileAddressResolution(host, port);
   }
 }

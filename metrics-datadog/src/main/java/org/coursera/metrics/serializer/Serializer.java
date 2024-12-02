@@ -16,25 +16,25 @@ public interface Serializer {
   /**
    * Write starting marker of the datadog time series object
    */
-  public void startObject() throws IOException;
+  void startObject() throws IOException;
 
   /**
    * Append a gauge to the time series
    */
-  public void appendGauge(DatadogGauge gauge) throws IOException;
+  void appendGauge(DatadogGauge gauge) throws IOException;
 
   /**
    * Append a counter to the time series
    */
-  public void appendCounter(DatadogCounter counter) throws IOException;
+  void appendCounter(DatadogCounter counter) throws IOException;
 
   /**
    * Mark ending of the datadog time series object
    */
-  public void endObject() throws IOException;
+  void endObject() throws IOException;
 
   /**
    * Get datadog time series object serialized as a string
    */
-  public String getAsString() throws IOException;
+  String getAsString() throws IOException;
 }

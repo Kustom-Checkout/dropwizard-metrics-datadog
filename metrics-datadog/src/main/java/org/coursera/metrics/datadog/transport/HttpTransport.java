@@ -1,26 +1,31 @@
 package org.coursera.metrics.datadog.transport;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.zip.DeflaterInputStream;
 
 import org.apache.commons.codec.digest.DigestUtils;
-import org.apache.http.HttpHost;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.ResponseHandler;
-import org.apache.http.client.fluent.Executor;
-import org.apache.http.client.fluent.Response;
-import org.apache.http.entity.ContentType;
-import org.apache.http.util.EntityUtils;
+import org.apache.hc.core5.http.ParseException;
 import org.coursera.metrics.datadog.model.DatadogCounter;
 import org.coursera.metrics.datadog.model.DatadogGauge;
 import org.coursera.metrics.serializer.JsonSerializer;
 import org.coursera.metrics.serializer.Serializer;
+
+import org.apache.hc.client5.http.fluent.Executor;
+import org.apache.hc.client5.http.fluent.Response;
+import org.apache.hc.core5.http.ClassicHttpResponse;
+import org.apache.hc.core5.http.ContentType;
+import org.apache.hc.core5.http.HttpException;
+import org.apache.hc.core5.http.HttpHost;
+import org.apache.hc.core5.http.io.HttpClientResponseHandler;
+import org.apache.hc.core5.http.io.entity.EntityUtils;
+import org.apache.hc.core5.util.Timeout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.apache.http.client.fluent.Request.Post;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.Objects;
+import java.util.zip.DeflaterInputStream;
 
 /**
  * Uses the datadog http webservice to push metrics.
@@ -34,33 +39,29 @@ public class HttpTransport implements Transport {
   private final static String BASE_URL = "https://api.datadoghq.com/api/v1";
   private final String seriesUrl;
   private final int connectTimeout;     // in milliseconds
-  private final int socketTimeout;      // in milliseconds
+  private final int responseTimeout;      // in milliseconds
   private final HttpHost proxy;
   private final Executor executor;
   private final boolean useCompression;
 
   private HttpTransport(String apiKey,
                         int connectTimeout,
-                        int socketTimeout,
+                        int responseTimeout,
                         HttpHost proxy,
                         Executor executor,
                         boolean useCompression) {
     this.seriesUrl = String.format("%s/series?api_key=%s", BASE_URL, apiKey);
     this.connectTimeout = connectTimeout;
-    this.socketTimeout = socketTimeout;
+    this.responseTimeout = responseTimeout;
     this.proxy = proxy;
     this.useCompression = useCompression;
-    if (executor != null) {
-      this.executor = executor;
-    } else {
-      this.executor = Executor.newInstance();
-    }
+    this.executor = Objects.requireNonNullElseGet(executor, Executor::newInstance);
   }
 
   public static class Builder {
     String apiKey;
     int connectTimeout = 5000;
-    int socketTimeout = 5000;
+    int responseTimeout = 5000;
     HttpHost proxy;
     Executor executor;
     boolean useCompression = false;
@@ -75,8 +76,8 @@ public class HttpTransport implements Transport {
       return this;
     }
 
-    public Builder withSocketTimeout(int milliseconds) {
-      this.socketTimeout = milliseconds;
+    public Builder withResponseTimeout(int milliseconds) {
+      this.responseTimeout = milliseconds;
       return this;
     }
 
@@ -96,7 +97,7 @@ public class HttpTransport implements Transport {
     }
 
     public HttpTransport build() {
-      return new HttpTransport(apiKey, connectTimeout, socketTimeout, proxy, executor, useCompression);
+      return new HttpTransport(apiKey, connectTimeout, responseTimeout, proxy, executor, useCompression);
     }
   }
 
@@ -128,26 +129,18 @@ public class HttpTransport implements Transport {
 
     public void send() throws Exception {
       serializer.endObject();
-      String postBody = serializer.getAsString();
+      var postBody = serializer.getAsString();
       if (LOG.isDebugEnabled()) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("Sending HTTP POST request to ");
-        sb.append(this.transport.seriesUrl);
-        sb.append(", uncompressed POST body length is: ");
-        sb.append(postBody.length());
-        LOG.debug(sb.toString());
-
-        StringBuilder bodyMsgBuilder = new StringBuilder();
-        bodyMsgBuilder.append("Uncompressed POST body is: \n").append(postBody);
-        LOG.debug(bodyMsgBuilder.toString());
+          LOG.debug("Sending HTTP POST request to {}, uncompressed POST body length is: {}", transport.seriesUrl, postBody.length());
+          LOG.debug("Uncompressed POST body is: \n{}", postBody);
       }
       long start = System.currentTimeMillis();
-      org.apache.http.client.fluent.Request request = Post(this.transport.seriesUrl)
+      var request = org.apache.hc.client5.http.fluent.Request.post(transport.seriesUrl)
         .useExpectContinue()
-        .connectTimeout(this.transport.connectTimeout)
-        .socketTimeout(this.transport.socketTimeout);
+        .connectTimeout(Timeout.ofMicroseconds(transport.connectTimeout))
+        .responseTimeout(Timeout.ofMicroseconds(transport.responseTimeout));
 
-      if (this.transport.useCompression) {
+      if (transport.useCompression) {
         request
           .addHeader("Content-Encoding", "deflate")
           .addHeader("Content-MD5", DigestUtils.md5Hex(postBody))
@@ -156,37 +149,37 @@ public class HttpTransport implements Transport {
         request.bodyString(postBody, ContentType.APPLICATION_JSON);
       }
 
-      if (this.transport.proxy != null) {
-        request.viaProxy(this.transport.proxy);
+      if (transport.proxy != null) {
+        request.viaProxy(transport.proxy);
       }
 
-      Response response = this.transport.executor.execute(request);
+      Response response = transport.executor.execute(request);
 
       final long elapsed = System.currentTimeMillis() - start;
 
       if (LOG.isWarnEnabled()) {
-        response.handleResponse(new ResponseHandler<Void>() {
-          public Void handleResponse(HttpResponse response) throws IOException {
-            int statusCode = response.getStatusLine().getStatusCode();
+        response.handleResponse(new HttpClientResponseHandler<Void>() {
+          @Override
+          public Void handleResponse(ClassicHttpResponse classicHttpResponse) throws HttpException, IOException {
+            int statusCode = classicHttpResponse.getCode();
             if (statusCode >= 400) {
-              LOG.warn(getLogMessage("Failure sending metrics to Datadog: ", response));
+              LOG.warn(getLogMessage("Failure sending metrics to Datadog: ", classicHttpResponse));
             } else {
               if (LOG.isDebugEnabled()) {
-                LOG.debug(getLogMessage("Sent metrics to Datadog: ", response));
+                LOG.debug(getLogMessage("Sent metrics to Datadog: ", classicHttpResponse));
               }
             }
             return null;
           }
 
-          private String getLogMessage(String headline, HttpResponse response) throws IOException {
-            StringBuilder sb = new StringBuilder();
-
+          private String getLogMessage(String headline, ClassicHttpResponse response) throws IOException, ParseException {
+            var sb = new StringBuilder();
             sb.append(headline);
             sb.append("\n");
             sb.append("  Timing: ").append(elapsed).append(" ms\n");
-            sb.append("  Status: ").append(response.getStatusLine().getStatusCode()).append("\n");
+            sb.append("  Status: ").append(response.getCode()).append("\n");
 
-            String content = EntityUtils.toString(response.getEntity(), "UTF-8");
+            var content = EntityUtils.toString(response.getEntity(), "UTF-8");
             sb.append("  Content: ").append(content);
             return sb.toString();
           }
@@ -198,17 +191,17 @@ public class HttpTransport implements Transport {
     }
 
     private static InputStream deflated(String str) throws IOException {
-      if (str == null || str.length() == 0) {
+      if (str == null || str.isEmpty()) {
         return new ByteArrayInputStream(new byte[0]);
       }
-      ByteArrayInputStream inputStream = new ByteArrayInputStream(str.getBytes("UTF-8"));
+      ByteArrayInputStream inputStream = new ByteArrayInputStream(str.getBytes(StandardCharsets.UTF_8));
       return new DeflaterInputStream(inputStream) {
         @Override
         public void close() throws IOException {
           if (LOG.isDebugEnabled()) {
             final StringBuilder sb = new StringBuilder();
-            long bytesWritten = this.def.getBytesWritten();
-            long bytesRead = this.def.getBytesRead();
+            long bytesWritten = def.getBytesWritten();
+            long bytesRead = def.getBytesRead();
             sb.append("POST body length compressed / uncompressed / compression ratio: ");
             sb.append(bytesWritten);
             sb.append(" / ");
