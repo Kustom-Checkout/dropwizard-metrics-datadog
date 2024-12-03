@@ -42,7 +42,7 @@ public class UdpTransport implements Transport {
             .queueSize(Integer.MAX_VALUE)
             .constantTags(globalTags)
             .errorHandler(e ->
-              LOG.error("statsdHost: {}, port: {}, errorMessage: {}", statsdHost, port, e.getMessage())
+              LOG.error("statsdHost: {}, port: {}, isRetryingLookup {}, errorMessage: {}", statsdHost, port, isRetryingLookup, e.getMessage())
             )
             .addressLookup(socketAddressCallable)
             .build();
