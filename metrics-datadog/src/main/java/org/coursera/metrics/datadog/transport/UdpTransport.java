@@ -41,7 +41,9 @@ public class UdpTransport implements Transport {
             .prefix(prefix)
             .queueSize(Integer.MAX_VALUE)
             .constantTags(globalTags)
-            .errorHandler(e -> LOG.error(e.getMessage(), e))
+            .errorHandler(e ->
+              LOG.error("statsdHost: {}, port: {}, errorMessage: {}", statsdHost, port, e.getMessage())
+            )
             .addressLookup(socketAddressCallable)
             .build();
   }
@@ -101,7 +103,7 @@ public class UdpTransport implements Transport {
       if (gauge.getPoints().size() > 1) {
           LOG.debug("Gauge {} has more than one data point, will pick the first point only", gauge.getMetric());
       }
-      var value = gauge.getPoints().get(0).get(1).doubleValue();
+      var value = gauge.getPoints().getFirst().get(1).doubleValue();
       var tags = gauge.getTags().toArray(new String[0]);
       statsdClient.gauge(gauge.getMetric(), value, tags);
     }
@@ -113,7 +115,7 @@ public class UdpTransport implements Transport {
       if (counter.getPoints().size() > 1) {
           LOG.debug("Counter {} has more than one data point, will pick the first point only", counter.getMetric());
       }
-      var value = counter.getPoints().get(0).get(1).longValue();
+      var value = counter.getPoints().getFirst().get(1).longValue();
       var tags = counter.getTags().toArray(new String[0]);
       var sb = new StringBuilder();
       for (var i = tags.length - 1; i >= 0; i--) {
