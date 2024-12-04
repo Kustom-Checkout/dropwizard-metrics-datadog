@@ -9,7 +9,6 @@ import org.coursera.metrics.serializer.JsonSerializer;
 import org.coursera.metrics.serializer.Serializer;
 
 import org.apache.hc.client5.http.fluent.Executor;
-import org.apache.hc.client5.http.fluent.Response;
 import org.apache.hc.core5.http.ClassicHttpResponse;
 import org.apache.hc.core5.http.ContentType;
 import org.apache.hc.core5.http.HttpException;
@@ -134,7 +133,7 @@ public class HttpTransport implements Transport {
           LOG.debug("Sending HTTP POST request to {}, uncompressed POST body length is: {}", transport.seriesUrl, postBody.length());
           LOG.debug("Uncompressed POST body is: \n{}", postBody);
       }
-      long start = System.currentTimeMillis();
+      var start = System.currentTimeMillis();
       var request = org.apache.hc.client5.http.fluent.Request.post(transport.seriesUrl)
         .useExpectContinue()
         .connectTimeout(Timeout.ofMicroseconds(transport.connectTimeout))
@@ -153,15 +152,15 @@ public class HttpTransport implements Transport {
         request.viaProxy(transport.proxy);
       }
 
-      Response response = transport.executor.execute(request);
+      var response = transport.executor.execute(request);
 
-      final long elapsed = System.currentTimeMillis() - start;
+      var elapsed = System.currentTimeMillis() - start;
 
       if (LOG.isWarnEnabled()) {
         response.handleResponse(new HttpClientResponseHandler<Void>() {
           @Override
           public Void handleResponse(ClassicHttpResponse classicHttpResponse) throws HttpException, IOException {
-            int statusCode = classicHttpResponse.getCode();
+            var statusCode = classicHttpResponse.getCode();
             if (statusCode >= 400) {
               LOG.warn(getLogMessage("Failure sending metrics to Datadog: ", classicHttpResponse));
             } else {
@@ -199,9 +198,9 @@ public class HttpTransport implements Transport {
         @Override
         public void close() throws IOException {
           if (LOG.isDebugEnabled()) {
-            final StringBuilder sb = new StringBuilder();
-            long bytesWritten = def.getBytesWritten();
-            long bytesRead = def.getBytesRead();
+            var sb = new StringBuilder();
+            var bytesWritten = def.getBytesWritten();
+            var bytesRead = def.getBytesRead();
             sb.append("POST body length compressed / uncompressed / compression ratio: ");
             sb.append(bytesWritten);
             sb.append(" / ");

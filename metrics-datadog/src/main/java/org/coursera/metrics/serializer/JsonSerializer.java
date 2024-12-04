@@ -5,8 +5,6 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.coursera.metrics.datadog.model.DatadogCounter;
 import org.coursera.metrics.datadog.model.DatadogGauge;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -21,7 +19,6 @@ import java.nio.charset.StandardCharsets;
 public class JsonSerializer implements Serializer {
   private static final JsonFactory JSON_FACTORY = new JsonFactory();
   private static final ObjectMapper MAPPER = new ObjectMapper(JSON_FACTORY);
-  private static final Logger LOG = LoggerFactory.getLogger(JsonSerializer.class);
 
   private JsonGenerator jsonOut;
   private ByteArrayOutputStream outputStream;

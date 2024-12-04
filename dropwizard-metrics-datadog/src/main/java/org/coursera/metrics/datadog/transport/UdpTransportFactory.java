@@ -25,7 +25,7 @@ public class UdpTransportFactory implements AbstractTransportFactory {
     return new UdpTransport.Builder()
         .withPrefix(prefix)
         .withStatsdHost(statsdHost)
-        .withPort(port)
+        .withPort(statsdHost.startsWith("unix://") ? 0 : port)
         .withRetryingLookup(retryingLookup)
         .build();
     }

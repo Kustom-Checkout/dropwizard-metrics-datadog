@@ -72,9 +72,9 @@ public class DatadogReporter extends ScheduledReporter {
                      SortedMap<String, Histogram> histograms,
                      SortedMap<String, Meter> meters,
                      SortedMap<String, Timer> timers) {
-    final long timestamp = clock.getTime() / 1000;
+    var timestamp = clock.getTime() / 1000;
 
-    List<String> newTags = tags;
+    var newTags = tags;
     if (tagsCallback != null) {
       var dynamicTags = tagsCallback.getTags();
       if (dynamicTags != null && ! dynamicTags.isEmpty()) {
@@ -119,7 +119,7 @@ public class DatadogReporter extends ScheduledReporter {
         snapshot.getMedian(), snapshot.get75thPercentile(), snapshot.get95thPercentile(), snapshot.get98thPercentile(),
         snapshot.get99thPercentile(), snapshot.get999thPercentile() };
 
-    for (int i = 0; i < STATS_EXPANSIONS.length; i++) {
+    for (var i = 0; i < STATS_EXPANSIONS.length; i++) {
       if (expansions.contains(STATS_EXPANSIONS[i])) {
         request.addGauge(new DatadogGauge(
             appendExpansionSuffix(name, STATS_EXPANSIONS[i]),
@@ -147,7 +147,7 @@ public class DatadogReporter extends ScheduledReporter {
     double[] values = { meter.getOneMinuteRate(), meter.getFiveMinuteRate(),
         meter.getFifteenMinuteRate(), meter.getMeanRate() };
 
-    for (int i = 0; i < RATE_EXPANSIONS.length; i++) {
+    for (var i = 0; i < RATE_EXPANSIONS.length; i++) {
       if (expansions.contains(RATE_EXPANSIONS[i])) {
         request.addGauge(new DatadogGauge(
             appendExpansionSuffix(name, RATE_EXPANSIONS[i]),
@@ -161,7 +161,7 @@ public class DatadogReporter extends ScheduledReporter {
 
   private void reportHistogram(String name, Histogram histogram, long timestamp, List<String> tags)
       throws IOException {
-    final Snapshot snapshot = histogram.getSnapshot();
+    var snapshot = histogram.getSnapshot();
 
     if (expansions.contains(Expansion.COUNT)) {
       request.addGauge(new DatadogGauge(
@@ -176,7 +176,7 @@ public class DatadogReporter extends ScheduledReporter {
         snapshot.getMedian(), snapshot.get75thPercentile(), snapshot.get95thPercentile(), snapshot.get98thPercentile(),
         snapshot.get99thPercentile(), snapshot.get999thPercentile() };
 
-    for (int i = 0; i < STATS_EXPANSIONS.length; i++) {
+    for (var i = 0; i < STATS_EXPANSIONS.length; i++) {
       if (expansions.contains(STATS_EXPANSIONS[i])) {
         request.addGauge(new DatadogGauge(
             appendExpansionSuffix(name, STATS_EXPANSIONS[i]),
@@ -294,7 +294,7 @@ public class DatadogReporter extends ScheduledReporter {
       this.durationUnit = TimeUnit.MILLISECONDS;
       this.filter = MetricFilter.ALL;
       this.metricNameFormatter = new DefaultMetricNameFormatter();
-      this.tags = new ArrayList<String>();
+      this.tags = new ArrayList<>();
     }
 
     public Builder withHost(String host) {

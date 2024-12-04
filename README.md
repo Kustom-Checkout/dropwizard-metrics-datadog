@@ -106,7 +106,7 @@ First, add the `dropwizard-metrics-datadog` dependency in your POM:
     <dependency>
         <groupId>org.coursera</groupId>
         <artifactId>dropwizard-metrics-datadog</artifactId>
-        <version>2.0.1</version>
+        <version>2.0.2</version>
     </dependency>
 ~~~
 
