@@ -30,13 +30,9 @@ public class UdpTransport implements Transport {
   private final Map<String, Long> lastSeenCounters = new HashMap<>();
 
   private UdpTransport(String prefix, String statsdHost, int port, boolean isRetryingLookup, String[] globalTags) {
-    final Callable<SocketAddress> socketAddressCallable;
-
-    if (isRetryingLookup) {
-      socketAddressCallable = volatileAddressResolver(statsdHost, port);
-    } else {
-      socketAddressCallable = staticAddressResolver(statsdHost, port);
-    }
+    var socketAddressCallable = isRetryingLookup
+            ? volatileAddressResolver(statsdHost, port)
+            : staticAddressResolver(statsdHost, port);
 
     statsd = new NonBlockingStatsDClientBuilder()
             .prefix(prefix)
@@ -47,6 +43,7 @@ public class UdpTransport implements Transport {
             )
             .addressLookup(socketAddressCallable)
             .build();
+    LOG.info("Created UdpTransport {} with statsdHost: {}, port: {}, isRetryingLookup: {}", statsd, statsdHost, port, isRetryingLookup);
   }
 
   @Override
