@@ -2,6 +2,7 @@ package org.coursera.metrics.serializer;
 
 import org.coursera.metrics.datadog.model.DatadogCounter;
 import org.coursera.metrics.datadog.model.DatadogGauge;
+import org.coursera.metrics.datadog.model.DatadogRate;
 
 import java.io.IOException;
 
@@ -27,6 +28,11 @@ public interface Serializer {
    * Append a counter to the time series
    */
   void appendCounter(DatadogCounter counter) throws IOException;
+
+  /**
+   * Append a rate to the time series
+   */
+  void appendRate(DatadogRate rate) throws IOException;
 
   /**
    * Mark ending of the datadog time series object

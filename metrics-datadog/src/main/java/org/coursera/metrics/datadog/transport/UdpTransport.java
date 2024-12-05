@@ -4,6 +4,7 @@ import com.timgroup.statsd.NonBlockingStatsDClientBuilder;
 import com.timgroup.statsd.StatsDClient;
 import org.coursera.metrics.datadog.model.DatadogCounter;
 import org.coursera.metrics.datadog.model.DatadogGauge;
+import org.coursera.metrics.datadog.model.DatadogRate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,6 +49,7 @@ public class UdpTransport implements Transport {
             .build();
   }
 
+  @Override
   public void close() throws IOException {
     statsd.stop();
   }
@@ -83,6 +85,7 @@ public class UdpTransport implements Transport {
     }
   }
 
+  @Override
   public Request prepare() throws IOException {
     return new DogstatsdRequest(statsd, lastSeenCounters);
   }
@@ -99,6 +102,7 @@ public class UdpTransport implements Transport {
     /**
      * statsd has no notion of batch request, so gauges are pushed as they are received
      */
+    @Override
     public void addGauge(DatadogGauge gauge) {
       if (gauge.getPoints().size() > 1) {
           LOG.debug("Gauge {} has more than one data point, will pick the first point only", gauge.getMetric());
@@ -111,6 +115,7 @@ public class UdpTransport implements Transport {
     /**
      * statsd has no notion of batch request, so counters are pushed as they are received
      */
+    @Override
     public void addCounter(DatadogCounter counter) {
       if (counter.getPoints().size() > 1) {
           LOG.debug("Counter {} has more than one data point, will pick the first point only", counter.getMetric());
@@ -141,9 +146,15 @@ public class UdpTransport implements Transport {
       statsdClient.count(metric, finalValue, tags);
     }
 
+    @Override
+    public void addRate(DatadogRate rate) throws IOException {
+
+    }
+
     /**
      * For statsd the metrics are pushed as they are received. So there is nothing do in send.
      */
+    @Override
     public void send() {
     }
   }

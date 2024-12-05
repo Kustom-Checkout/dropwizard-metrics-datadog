@@ -2,6 +2,7 @@ package org.coursera.metrics.datadog.transport;
 
 import org.coursera.metrics.datadog.model.DatadogCounter;
 import org.coursera.metrics.datadog.model.DatadogGauge;
+import org.coursera.metrics.datadog.model.DatadogRate;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -32,6 +33,11 @@ public interface Transport extends Closeable {
      * Add a counter to the request
      */
     void addCounter(DatadogCounter counter) throws IOException;
+
+    /**
+     * Add a counter to the request
+     */
+    void addRate(DatadogRate rate) throws IOException;
 
     /**
      * Send the request to datadog

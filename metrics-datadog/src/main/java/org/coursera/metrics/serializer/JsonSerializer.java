@@ -5,6 +5,7 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.coursera.metrics.datadog.model.DatadogCounter;
 import org.coursera.metrics.datadog.model.DatadogGauge;
+import org.coursera.metrics.datadog.model.DatadogRate;
 import org.coursera.metrics.datadog.model.DatadogSeries;
 
 import java.io.ByteArrayOutputStream;
@@ -25,6 +26,7 @@ public class JsonSerializer implements Serializer {
   private JsonGenerator jsonOut;
   private ByteArrayOutputStream outputStream;
 
+  @Override
   public void startObject() throws IOException {
     outputStream = new ByteArrayOutputStream(2048);
     jsonOut = JSON_FACTORY.createGenerator(outputStream);
@@ -32,12 +34,19 @@ public class JsonSerializer implements Serializer {
     jsonOut.writeArrayFieldStart("series");
   }
 
+  @Override
   public void appendGauge(DatadogGauge gauge) throws IOException {
     MAPPER.writeValue(jsonOut, new MetricSeries(gauge));
   }
 
+  @Override
   public void appendCounter(DatadogCounter counter) throws IOException {
     MAPPER.writeValue(jsonOut, new MetricSeries(counter));
+  }
+
+  @Override
+  public void appendRate(DatadogRate rate) throws IOException {
+    MAPPER.writeValue(jsonOut, new MetricSeries(rate));
   }
 
   private record MetricSeries(String metric, List<MetricPoint> points, List<String> tags, int type, List<MetricResource> resources) {
@@ -77,6 +86,7 @@ public class JsonSerializer implements Serializer {
     private record MetricResource(String name, String type) {}
   }
 
+  @Override
   public void endObject() throws IOException {
     jsonOut.writeEndArray();
     jsonOut.writeEndObject();
@@ -84,6 +94,7 @@ public class JsonSerializer implements Serializer {
     outputStream.close();
   }
 
+  @Override
   public String getAsString() throws UnsupportedEncodingException {
     return outputStream.toString(StandardCharsets.UTF_8);
   }

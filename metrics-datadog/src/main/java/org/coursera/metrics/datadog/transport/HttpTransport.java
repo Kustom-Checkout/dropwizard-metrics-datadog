@@ -5,6 +5,7 @@ import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.hc.core5.http.ParseException;
 import org.coursera.metrics.datadog.model.DatadogCounter;
 import org.coursera.metrics.datadog.model.DatadogGauge;
+import org.coursera.metrics.datadog.model.DatadogRate;
 import org.coursera.metrics.serializer.JsonSerializer;
 import org.coursera.metrics.serializer.Serializer;
 
@@ -35,7 +36,7 @@ public class HttpTransport implements Transport {
 
   private static final Logger LOG = LoggerFactory.getLogger(HttpTransport.class);
 
-  private static final String SERIES_URL = "https://api.datadoghq.eu/api/v2/series?api_key=%s";
+  private static final String SERIES_URL = "https://api.datadoghq.eu/api/v2/series";
   private final String apiKey;
   private final int connectTimeout;     // in milliseconds
   private final int responseTimeout;      // in milliseconds
@@ -100,10 +101,12 @@ public class HttpTransport implements Transport {
     }
   }
 
+  @Override
   public Request prepare() throws IOException {
     return new HttpRequest(this);
   }
 
+  @Override
   public void close() throws IOException {
   }
 
@@ -118,14 +121,22 @@ public class HttpTransport implements Transport {
       serializer.startObject();
     }
 
+    @Override
     public void addGauge(DatadogGauge gauge) throws IOException {
       serializer.appendGauge(gauge);
     }
 
+    @Override
     public void addCounter(DatadogCounter counter) throws IOException {
       serializer.appendCounter(counter);
     }
 
+    @Override
+    public void addRate(DatadogRate rate) throws IOException {
+      serializer.appendRate(rate);
+    }
+
+    @Override
     public void send() throws Exception {
       serializer.endObject();
       var postBody = serializer.getAsString();
