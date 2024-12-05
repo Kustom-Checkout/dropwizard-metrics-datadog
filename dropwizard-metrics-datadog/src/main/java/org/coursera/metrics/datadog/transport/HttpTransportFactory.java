@@ -36,7 +36,7 @@ public class HttpTransportFactory implements AbstractTransportFactory {
         throw new IllegalStateException("must set both proxyPort and proxyHost or neither");
       }
 
-      builder.withProxy(proxyHost, proxyPort);
+      builder = builder.withProxy(proxyHost, proxyPort);
     }
 
     return builder.build();

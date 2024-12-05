@@ -35,8 +35,8 @@ public class HttpTransport implements Transport {
 
   private static final Logger LOG = LoggerFactory.getLogger(HttpTransport.class);
 
-  private final static String BASE_URL = "https://api.datadoghq.com/api/v1";
-  private final String seriesUrl;
+  private final static String BASE_URL = "https://api.datadoghq.eu/api/v2";
+  private final String seriesUrl;         
   private final int connectTimeout;     // in milliseconds
   private final int responseTimeout;      // in milliseconds
   private final HttpHost proxy;
@@ -130,20 +130,20 @@ public class HttpTransport implements Transport {
       serializer.endObject();
       var postBody = serializer.getAsString();
       if (LOG.isDebugEnabled()) {
-          LOG.debug("Sending HTTP POST request to {}, uncompressed POST body length is: {}", transport.seriesUrl, postBody.length());
-          LOG.debug("Uncompressed POST body is: \n{}", postBody);
+        LOG.debug("Sending HTTP POST request to {}, uncompressed POST body length is: {}", transport.seriesUrl, postBody.length());
+        LOG.debug("Uncompressed POST body is: \n{}", postBody);
       }
       var start = System.currentTimeMillis();
       var request = org.apache.hc.client5.http.fluent.Request.post(transport.seriesUrl)
-        .useExpectContinue()
-        .connectTimeout(Timeout.ofMicroseconds(transport.connectTimeout))
-        .responseTimeout(Timeout.ofMicroseconds(transport.responseTimeout));
+              .useExpectContinue()
+              .connectTimeout(Timeout.ofMicroseconds(transport.connectTimeout))
+              .responseTimeout(Timeout.ofMicroseconds(transport.responseTimeout));
 
       if (transport.useCompression) {
         request
-          .addHeader("Content-Encoding", "deflate")
-          .addHeader("Content-MD5", DigestUtils.md5Hex(postBody))
-          .bodyStream(deflated(postBody), ContentType.APPLICATION_JSON);
+                .addHeader("Content-Encoding", "deflate")
+                .addHeader("Content-MD5", DigestUtils.md5Hex(postBody))
+                .bodyStream(deflated(postBody), ContentType.APPLICATION_JSON);
       } else {
         request.bodyString(postBody, ContentType.APPLICATION_JSON);
       }
@@ -152,40 +152,44 @@ public class HttpTransport implements Transport {
         request.viaProxy(transport.proxy);
       }
 
-      var response = transport.executor.execute(request);
+      try {
+        var response = transport.executor.execute(request);
 
-      var elapsed = System.currentTimeMillis() - start;
+        var elapsed = System.currentTimeMillis() - start;
 
-      if (LOG.isWarnEnabled()) {
-        response.handleResponse(new HttpClientResponseHandler<Void>() {
-          @Override
-          public Void handleResponse(ClassicHttpResponse classicHttpResponse) throws HttpException, IOException {
-            var statusCode = classicHttpResponse.getCode();
-            if (statusCode >= 400) {
-              LOG.warn(getLogMessage("Failure sending metrics to Datadog: ", classicHttpResponse));
-            } else {
-              if (LOG.isDebugEnabled()) {
-                LOG.debug(getLogMessage("Sent metrics to Datadog: ", classicHttpResponse));
+        if (LOG.isWarnEnabled()) {
+          response.handleResponse(new HttpClientResponseHandler<Void>() {
+            @Override
+            public Void handleResponse(ClassicHttpResponse classicHttpResponse) throws HttpException, IOException {
+              var statusCode = classicHttpResponse.getCode();
+              if (statusCode >= 400) {
+                LOG.warn(getLogMessage("Failure sending metrics to Datadog: ", classicHttpResponse));
+              } else {
+                if (LOG.isDebugEnabled()) {
+                  LOG.debug(getLogMessage("Sent metrics to Datadog: ", classicHttpResponse));
+                }
               }
+              return null;
             }
-            return null;
-          }
 
-          private String getLogMessage(String headline, ClassicHttpResponse response) throws IOException, ParseException {
-            var sb = new StringBuilder();
-            sb.append(headline);
-            sb.append("\n");
-            sb.append("  Timing: ").append(elapsed).append(" ms\n");
-            sb.append("  Status: ").append(response.getCode()).append("\n");
+            private String getLogMessage(String headline, ClassicHttpResponse response) throws IOException, ParseException {
+              var sb = new StringBuilder();
+              sb.append(headline);
+              sb.append("\n");
+              sb.append("  Timing: ").append(elapsed).append(" ms\n");
+              sb.append("  Status: ").append(response.getCode()).append("\n");
 
-            var content = EntityUtils.toString(response.getEntity(), "UTF-8");
-            sb.append("  Content: ").append(content);
-            return sb.toString();
-          }
+              var content = EntityUtils.toString(response.getEntity(), "UTF-8");
+              sb.append("  Content: ").append(content);
+              return sb.toString();
+            }
 
-        });
-      } else {
-        response.discardContent();
+          });
+        } else {
+          response.discardContent();
+        }
+      } catch (IOException e) {
+        LOG.warn("Failed to send metrics to Datadog: seriesUrl: {}, proxy: {}, error: {}", transport.seriesUrl, transport.proxy, e.getMessage());
       }
     }
 
@@ -193,7 +197,7 @@ public class HttpTransport implements Transport {
       if (str == null || str.isEmpty()) {
         return new ByteArrayInputStream(new byte[0]);
       }
-      ByteArrayInputStream inputStream = new ByteArrayInputStream(str.getBytes(StandardCharsets.UTF_8));
+      var inputStream = new ByteArrayInputStream(str.getBytes(StandardCharsets.UTF_8));
       return new DeflaterInputStream(inputStream) {
         @Override
         public void close() throws IOException {
