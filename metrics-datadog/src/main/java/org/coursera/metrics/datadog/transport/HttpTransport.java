@@ -35,8 +35,8 @@ public class HttpTransport implements Transport {
 
   private static final Logger LOG = LoggerFactory.getLogger(HttpTransport.class);
 
-  private final static String BASE_URL = "https://api.datadoghq.eu/api/v2";
-  private final String seriesUrl;         
+  private static final String SERIES_URL = "https://api.datadoghq.eu/api/v2/series?api_key=%s";
+  private final String apiKey;
   private final int connectTimeout;     // in milliseconds
   private final int responseTimeout;      // in milliseconds
   private final HttpHost proxy;
@@ -49,7 +49,7 @@ public class HttpTransport implements Transport {
                         HttpHost proxy,
                         Executor executor,
                         boolean useCompression) {
-    this.seriesUrl = String.format("%s/series?api_key=%s", BASE_URL, apiKey);
+    this.apiKey = apiKey;
     this.connectTimeout = connectTimeout;
     this.responseTimeout = responseTimeout;
     this.proxy = proxy;
@@ -130,12 +130,13 @@ public class HttpTransport implements Transport {
       serializer.endObject();
       var postBody = serializer.getAsString();
       if (LOG.isDebugEnabled()) {
-        LOG.debug("Sending HTTP POST request to {}, uncompressed POST body length is: {}", transport.seriesUrl, postBody.length());
+        LOG.debug("Sending HTTP POST request to proxy {}, uncompressed POST body length is: {}", transport.proxy, postBody.length());
         LOG.debug("Uncompressed POST body is: \n{}", postBody);
       }
       var start = System.currentTimeMillis();
-      var request = org.apache.hc.client5.http.fluent.Request.post(transport.seriesUrl)
+      var request = org.apache.hc.client5.http.fluent.Request.post(SERIES_URL)
               .useExpectContinue()
+              .addHeader("DD-API-KEY", transport.apiKey)
               .connectTimeout(Timeout.ofMicroseconds(transport.connectTimeout))
               .responseTimeout(Timeout.ofMicroseconds(transport.responseTimeout));
 
@@ -189,7 +190,7 @@ public class HttpTransport implements Transport {
           response.discardContent();
         }
       } catch (IOException e) {
-        LOG.warn("Failed to send metrics to Datadog: seriesUrl: {}, proxy: {}, error: {}", transport.seriesUrl, transport.proxy, e.getMessage());
+        LOG.warn("Failed to send metrics to Datadog: proxy: {}, error: {}", transport.proxy, e.getMessage());
       }
     }
 

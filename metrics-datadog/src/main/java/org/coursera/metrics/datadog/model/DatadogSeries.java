@@ -9,7 +9,7 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import org.coursera.metrics.datadog.TaggedName;
 
 public abstract class DatadogSeries<T extends Number> {
-  abstract protected String getType();
+  public abstract String getType();
 
   private final String name;
   private final T count;

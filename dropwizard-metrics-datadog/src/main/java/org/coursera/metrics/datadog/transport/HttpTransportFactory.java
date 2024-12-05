@@ -25,9 +25,13 @@ public class HttpTransportFactory implements AbstractTransportFactory {
   @JsonProperty
   private String proxyHost;
 
+  @JsonProperty
+  private Boolean compression;
+
   public HttpTransport build() {
     var builder = new HttpTransport.Builder()
         .withApiKey(apiKey)
+        .withCompression(Boolean.TRUE.equals(compression))
         .withConnectTimeout((int) connectTimeout.toMilliseconds())
         .withResponseTimeout((int) responseTimeout.toMilliseconds());
 
